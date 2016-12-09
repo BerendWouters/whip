@@ -60,26 +60,20 @@ if (!isset($_SESSION['whip_username']))
                         <ul class="nav nav-second-level">
 							<?php
 								$sql = "SELECT * FROM tasks WHERE completed = 0 AND owner = " . $_SESSION['whip_userid'] . "";
-								$result = mysqli_query($SQL_conn, $sql);	
+								$result = mysqli_query($SQL_conn, $sql);									
+								$currenttimestamp = strtotime(date('Y-m-d'));
 								if (mysqli_num_rows($result) > 0)
 								{
-									while($row = mysqli_fetch_assoc($result))
-									{							
-										$id = $row['id'];
-										$deadline = $row['deadline'];
-										$omschrijving = $row['smalltext'];
-										$startdatum = $row['startdatum'];
-										$owner = $row['owner'];
-										$projectnr = $row['parent'];
-										$currenttimestamp = strtotime(date('Y-m-d'));
-										if($currenttimestamp > $deadline)
+									while($task = mysqli_fetch_object($result))
+									{				
+										if($currenttimestamp > $task->startdatum)
 										{
 											echo "<li>\n";
-											echo "<a href=\"?task=" . $id . "\"><span class=\"label label-danger\">" . $omschrijving . "</span></a>\n";
+											echo "<a href=\"?task=" . $task->id . "\"><span class=\"label label-danger\">" . $task->smalltext . "</span></a>\n";
 											echo "</li>\n";
 										}else{
 											echo "<li>\n";
-											echo "<a href=\"?task=" . $id . "\"><span class=\"label label-success\">" . $omschrijving . "</span></a>\n";
+											echo "<a href=\"?task=" . $task->id . "\"><span class=\"label label-success\">" . $task->smalltext . "</span></a>\n";
 											echo "</li>\n";											
 										}
 									}
