@@ -1,7 +1,9 @@
 <?php
 session_start();
-require("db_connect.php");
 require("mail.php");
+require_once("models/Project.model.php");
+require_once("models/User.model.php");
+require_once("models/Task.model.php");
 require_once("classes/Tasks.class.php");
 require_once("classes/Projects.class.php");
 

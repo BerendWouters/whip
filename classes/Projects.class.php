@@ -10,29 +10,50 @@ class Projects{
 		$this->conn = $database->GetDatabase();
 	}
 
-	public function GetProject($id){
-		$sql = "SELECT * FROM projects WHERE id = ".  $id;
-		$result = mysqli_query($this->conn, $sql);
-		if (mysqli_num_rows($result) == 1)
-		{
+	public function GetProjects($status){
+		$sql = "SELECT * FROM projects WHERE completed = :status";
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":status", $status);
+		$stmt->execute();
+		$results = $stmt->fetchAll(PDO::FETCH_CLASS, 'Project');
+		$projects = array();
+		foreach ($results as $project) {
+			$project->user = $this->users->GetUser($project->lead);
+			$projects[$project->id] = $project;
+		}
+		return $projects;
+	}
 
-			$project = mysqli_fetch_object($result);
+
+	public function GetProject($id){
+		$sql = "SELECT * FROM projects WHERE id = :id";
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":id", $id);
+		$stmt->execute();
+		$stmt->setFetchMode(PDO::FETCH_CLASS, 'User');
+		$project = $stmt->fetch();
+		if ($project != null)
+		{
 			$project->user = $this->users->GetUser($project->lead);
 			//zoek taken onder project
-			$sql = "SELECT COUNT(id) as taskCount FROM tasks WHERE parent = '" . $project->id . "' AND task_parent = 0";
-			$result = mysqli_query($this->conn, $sql);
+			$sql = "SELECT COUNT(id) as taskCount FROM tasks WHERE parent = :projectId AND task_parent = 0";
+			$stmt = $this->conn->prepare($sql);
+			$stmt->bindParam(":projectId", $id);
+			$stmt->execute();
+			$result = $stmt->fetch();
 			$taskids = array();
-			if (mysqli_num_rows($result) == 1)
+			if ($result != null)
 			{
-				$tasks = mysqli_fetch_object($result);
-				$project->taskCount = $tasks->taskCount;
+				$project->taskCount = $result[0];
 			}else{
 				$project->taskCount = 0;
 			}
-			return $project;
 		}else{
-			echo "No project with id ". $id. " found";
+			$project = new stdClass;
+			$project->taskCount = 0;
+			$project->naam = "Geen project";
 		}
+		return $project;
 	}
 }
 ?>
