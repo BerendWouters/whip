@@ -30,11 +30,10 @@ class Tasks{
 
 	public function GetTask($taskId)
 	{
-		$sql = "SELECT * FROM tasks WHERE id = '" . mysqli_escape_string($_GET['task']) . "'";
+		$sql = "SELECT * FROM tasks WHERE id = '" . $taskId . "'";
 		$result = mysqli_query($this->conn, $sql);
-		if (mysqli_num_rows($result) == 0)
+		if (mysqli_num_rows($result) > 0)
 		{
-
 			$task = mysqli_fetch_object($result);
 			 
 			//zoek owner info
@@ -43,21 +42,40 @@ class Tasks{
 			$user = mysqli_fetch_object($result);
 			$task->user = $user;
 			//zoek taken onder project
-			$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "'";
-			$result = mysqli_query($this->conn, $sql);
-			$taskids = array();
-			if (mysqli_num_rows($result) > 0)
-			{
-				while($row = mysqli_fetch_assoc($result))
-				{			
-					array_push($taskids, $row['id']);
-				}
-			}
-			$alletaken = count($taskids);
-			$currenttimestamp = strtotime(date('Y-m-d'));
-			
+			//$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "'";
+			//$result = mysqli_query($this->conn, $sql);
+			//$taskids = array();
+			//if (mysqli_num_rows($result) > 0)
+			//{
+			//	while($row = mysqli_fetch_assoc($result))
+			//	{			
+			//		array_push($taskids, $row['id']);
+			//	}
+			//}
+			//$alletaken = count($taskids);
+			//$currenttimestamp = strtotime(date('Y-m-d'));
+			return $task;
 		}
 	}
+	
+	public function GetAllTasksFromProject($projectId){
+		$sql = "SELECT * FROM tasks WHERE parent = " . $projectId . " ORDER BY id";
+		$result = mysqli_query($this->conn, $sql);
+		$tasks = array();
+		if (mysqli_num_rows($result) > 0)
+		{
+			while($task = mysqli_fetch_object($result))
+			{
+				if(array_key_exists($task->task_parent, $tasks)){
+					$tasks[$task->task_parent]->tasks[$task->id] = $task;
+				}else{
+					$tasks[$task->id] = $task;
+				}
+				
+			}
+		}
+		return $tasks;
+	}	
 
 	public function renderTasks($taskList){
 		$currenttimestamp = strtotime(date('Y-m-d'));
@@ -76,6 +94,8 @@ class Tasks{
 				$this->renderTasks($task->tasks);
 		}
 	}
+	
+
 }
 
 ?>

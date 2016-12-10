@@ -3,8 +3,8 @@ session_start();
 require("db_connect.php");
 require("mail.php");
 require_once("classes/Tasks.php");
-
 require_once("classes/Projects.php");
+
 $tasks = new Tasks();
 if (!isset($_SESSION['whip_username']))
 {
@@ -80,6 +80,9 @@ if (!isset($_SESSION['whip_username']))
 				if(isset($_GET['project']))
 				{
 					include("pages/projects.php");
+				}elseif(isset($_GET['task']))
+				{
+					include("pages/tasks.php");
 				}else{
 					include("pages/overview.php");
 				}
