@@ -23,7 +23,7 @@ if(isset($_GET['project']))
 		$leadusername = $row['user_username'];
 		$leadmail = $row['user_mail'];
 		//zoek taken onder project
-		$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "'";
+		$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "' AND task_parent = 0";
 		$result = mysqli_query($SQL_conn, $sql);
 		$taskids = array();
 		if (mysqli_num_rows($result) > 0)
@@ -76,10 +76,10 @@ if(isset($_GET['project']))
 					<h4>Status:</h4>
 					<?php
 						//tel open en gesloten taken
-						$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "' AND completed = 0";
+						$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "' AND completed = 0 AND task_parent = 0";
 						$result = mysqli_query($SQL_conn, $sql);
 						$opentaken = mysqli_num_rows($result);
-						$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "' AND completed = 1";
+						$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "' AND completed = 1  AND task_parent = 0";
 						$result = mysqli_query($SQL_conn, $sql);
 						$geslotentaken = mysqli_num_rows($result);		
 						echo $geslotentaken . " melding(en) gesloten van de " . $alletaken . ".";
@@ -98,7 +98,7 @@ if(isset($_GET['project']))
 						$takenopenoverdeadline = 0;
 						$takengeslotenbinnendeadline = 0;
 						$takengeslotenoverdeadline = 0;						
-						$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "'";
+						$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "'  AND task_parent = 0";
 						$result = mysqli_query($SQL_conn, $sql);
 						$taskids = array();
 						if (mysqli_num_rows($result) > 0)
@@ -160,7 +160,7 @@ if(isset($_GET['project']))
 					<h4>Inzet:</h4>
 					<?php
 						// zoek mvp
-						$sql = "SELECT owner, COUNT(id) AS aantal FROM tasks GROUP BY owner ORDER BY aantal DESC LIMIT 0,1";
+						$sql = "SELECT owner, COUNT(id) AS aantal FROM tasks WHERE task_parent = 0 GROUP BY owner ORDER BY aantal DESC LIMIT 0,1";
 						$result = mysqli_query($SQL_conn, $sql);
 						$row = mysqli_fetch_assoc($result);
 						$mvpid = $row['owner'];
@@ -189,7 +189,7 @@ if(isset($_GET['project']))
 						<tbody>
 							<?php
 							$teller = 1;
-							$sql = "SELECT * FROM tasks WHERE completed = 0 AND parent = " . $projectid;
+							$sql = "SELECT * FROM tasks WHERE completed = 0  AND task_parent = 0 AND parent = " . $projectid;
 							$result = mysqli_query($SQL_conn, $sql);	
 							if (mysqli_num_rows($result) > 0)
 							{
@@ -279,7 +279,7 @@ if(isset($_GET['project']))
 						<tbody>
 							<?php
 							$teller = 1;
-							$sql = "SELECT * FROM tasks WHERE completed = 1 AND parent = " . $projectid;
+							$sql = "SELECT * FROM tasks WHERE completed = 1  AND task_parent = 0 AND parent = " . $projectid;
 							$result = mysqli_query($SQL_conn, $sql);	
 							if (mysqli_num_rows($result) > 0)
 							{
@@ -303,7 +303,12 @@ if(isset($_GET['project']))
 										$leadnaam = "Geen";
 										$leadusername = "";
 									}
-									echo "<tr onclick=\"window.document.location='?task=" . $id . "';\" class=\"success\">\n";
+									if($einddatum <= $deadline)
+									{
+										echo "<tr onclick=\"window.document.location='?task=" . $id . "';\" class=\"success\">\n";
+									}else{
+										echo "<tr onclick=\"window.document.location='?task=" . $id . "';\" class=\"danger\">\n";
+									}
 									echo "	<td>" . $teller . "</td>\n";
 									$teller++;
 									echo "	<td>" . $leadusername . "(" . $leadnaam . ")</td>\n";

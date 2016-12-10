@@ -135,7 +135,7 @@
 								<tbody>
 									<?php
 									$teller = 1;
-									$sql = "SELECT * FROM tasks WHERE completed = 0 AND owner = " . $_SESSION['whip_userid'] . "";
+									$sql = "SELECT * FROM tasks WHERE completed = 0  AND task_parent = 0 AND owner = " . $_SESSION['whip_userid'] . "";
 									$result = mysqli_query($SQL_conn, $sql);	
 									if (mysqli_num_rows($result) > 0)
 									{
@@ -236,7 +236,7 @@
 								<tbody>
 									<?php
 									$teller = 1;
-									$sql = "SELECT * FROM tasks WHERE completed = 0";
+									$sql = "SELECT * FROM tasks WHERE completed = 0  AND task_parent = 0";
 									$result = mysqli_query($SQL_conn, $sql);	
 									if (mysqli_num_rows($result) > 0)
 									{

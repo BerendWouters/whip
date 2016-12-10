@@ -59,7 +59,7 @@ if (!isset($_SESSION['whip_username']))
                         <a href="#"><i class="fa fa-tasks "></i>Mijn taken<span class="fa arrow"></span></a>
                         <ul class="nav nav-second-level">
 							<?php
-								$sql = "SELECT * FROM tasks WHERE completed = 0 AND owner = " . $_SESSION['whip_userid'] . "";
+								$sql = "SELECT * FROM tasks WHERE completed = 0  AND task_parent = 0 AND owner = " . $_SESSION['whip_userid'] . "";
 								$result = mysqli_query($SQL_conn, $sql);	
 								if (mysqli_num_rows($result) > 0)
 								{
@@ -81,6 +81,31 @@ if (!isset($_SESSION['whip_username']))
 											echo "<li>\n";
 											echo "<a href=\"?task=" . $id . "\"><span class=\"label label-success\">" . $omschrijving . "</span></a>\n";
 											echo "</li>\n";											
+										}
+										$sql2 = "SELECT * FROM tasks WHERE completed = 0  AND task_parent = " . $id . " AND owner = " . $_SESSION['whip_userid'] . "";
+										$result2 = mysqli_query($SQL_conn, $sql2);	
+										if (mysqli_num_rows($result2) > 0)
+										{
+											while($row2 = mysqli_fetch_assoc($result2))
+											{	
+												$id2 = $row2['id'];
+												$deadline2 = $row2['deadline'];
+												$omschrijving2 = $row2['smalltext'];
+												$startdatum2 = $row2['startdatum'];
+												$owner2 = $row2['owner'];
+												$projectnr2 = $row2['parent'];
+												$currenttimestamp2 = strtotime(date('Y-m-d'));
+												if($currenttimestamp2 > $deadline2)
+												{
+													echo "<li>\n";
+													echo "<a href=\"?task=" . $id2 . "\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class=\"label label-danger\">" . $omschrijving2 . "</span></a>\n";
+													echo "</li>\n";
+												}else{
+													echo "<li>\n";
+													echo "<a href=\"?task=" . $id2 . "\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class=\"label label-success\">" . $omschrijving2 . "</span></a>\n";
+													echo "</li>\n";											
+												}
+											}
 										}
 									}
 								}
