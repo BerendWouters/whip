@@ -2,6 +2,8 @@
 require_once("classes/Database.class.php");
 require_once("classes/Users.class.php");
 require_once("classes/Projects.class.php");
+
+
 class Tasks{
 	private $conn = null;
 	private $users = null;
@@ -14,54 +16,50 @@ class Tasks{
 	}
 
 	public function GetAllTasks(){
-		$sql = "SELECT * FROM tasks WHERE completed = 0  AND task_parent = 0";
-		$result = mysqli_query($this->conn, $sql);
+		$sql = 
+		$stmt = $this->conn->prepare("SELECT * FROM tasks WHERE completed = 0 AND task_parent = 0");
+		$stmt->execute();
+
+		$results = $stmt->fetchAll(PDO::FETCH_CLASS, 'Task');
 		$tasks = array();
-		if (mysqli_num_rows($result) > 0)
-		{
-			while($task = mysqli_fetch_object($result))
-			{
-				$task->project = $this->projects->GetProject($task->parent);
-				$task->user = $this->users->GetUser($task->owner);
-				$tasks[$task->id] = $task;
-			}
+		foreach ($results as $task) {
+			$task->project = $this->projects->GetProject($task->parent);
+			$task->user = $this->users->GetUser($task->owner);
+			$tasks[$task->id] = $task;
 		}
 		return $tasks;
 	}
 
 	public function GetAllMyTasks($userId){
-		$sql = "SELECT * FROM tasks WHERE completed = 0 AND owner = " . $userId . " ORDER BY id";
-		$result = mysqli_query($this->conn, $sql);
+		$sql = "SELECT * FROM tasks WHERE completed = 0 AND owner = :userId ORDER BY id";
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":userId", $userId);
+		$stmt->execute();
+		$results = $stmt->fetchAll(PDO::FETCH_CLASS, 'Task');
 		$tasks = array();
-		if (mysqli_num_rows($result) > 0)
-		{
-			while($task = mysqli_fetch_object($result))
-			{
-				$task->user = $this->users->GetUser($task->owner);
-				
-				if(array_key_exists($task->task_parent, $tasks)){
-					$tasks[$task->task_parent]->tasks[$task->id] = $task;
-				}else{
-					$tasks[$task->id] = $task;
-				}
-				
+		foreach ($results as $task) {
+			$task->user = $this->users->GetUser($task->owner);
+			
+			if(array_key_exists($task->task_parent, $tasks)){
+				$tasks[$task->task_parent]->tasks[$task->id] = $task;
+			}else{
+				$tasks[$task->id] = $task;
 			}
 		}
 		return $tasks;
 	}
 
 	public function GetAllMyParentTasks($userId){
-		$sql = "SELECT * FROM tasks WHERE completed = 0  AND task_parent = 0 AND owner = " . $_SESSION['whip_userid'] . "";
-		$result = mysqli_query($this->conn, $sql);
+		$sql = "SELECT * FROM tasks WHERE completed = 0  AND task_parent = 0 AND owner = :userId";
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":userId", $userId);
+		$stmt->execute();
+		$results = $stmt->fetchAll(PDO::FETCH_CLASS, 'Task');
 		$tasks = array();
-		if (mysqli_num_rows($result) > 0)
-		{
-			while($task = mysqli_fetch_object($result))
-			{
-				$task->project = $this->projects->GetProject($task->parent);
-				$task->user = $this->users->GetUser($task->owner);
-				$tasks[$task->id] = $task;
-			}
+		foreach ($results as $task) {
+			$task->project = $this->projects->GetProject($task->parent);
+			$task->user = $this->users->GetUser($task->owner);
+			$tasks[$task->id] = $task;
 		}
 		return $tasks;
 	}
@@ -69,10 +67,13 @@ class Tasks{
 	public function GetTask($taskId)
 	{
 		$sql = "SELECT * FROM tasks WHERE id = '" . $taskId . "'";
-		$result = mysqli_query($this->conn, $sql);
-		if (mysqli_num_rows($result) > 0)
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":userId", $userId);
+		$stmt->execute();
+		$stmt->setFetchMode(PDO::FETCH_CLASS, 'Task');
+		$task = $stmt->fetch();
+		if ($task != null)
 		{
-			$task = mysqli_fetch_object($result);
 			$task->user = $this->users->GetUser($task->owner);
 			return $task;
 		}
@@ -81,22 +82,21 @@ class Tasks{
 	public function GetAllTasksFromProject($projectId, $completionStatus = null){
 		$append = "";
 		if($completionStatus != NULL){
-			$append = " AND completed = ".$completionStatus ." ";
+			$append = " AND completed = :completionStatus";
 		}
-		$sql = "SELECT * FROM tasks WHERE parent = " . $projectId ." ". $append . "ORDER BY id";
-		$result = mysqli_query($this->conn, $sql);
+		$sql = "SELECT * FROM tasks WHERE parent = :projectId". $append . "ORDER BY id";
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":projectId", $projectId);
+		$stmt->bindParam(":completionStatus", $completionStatus);
+		$stmt->execute();
+		$results = $stmt->fetchAll(PDO::FETCH_CLASS, 'Task');
 		$tasks = array();
-		if (mysqli_num_rows($result) > 0)
-		{
-			while($task = mysqli_fetch_object($result))
-			{
-				$task->user = $this->users->GetUser($task->owner);
-				if(array_key_exists($task->task_parent, $tasks)){
-					$tasks[$task->task_parent]->tasks[$task->id] = $task;
-				}else{
-					$tasks[$task->id] = $task;
-				}
-				
+		foreach ($results as $task) {
+			$task->user = $this->users->GetUser($task->owner);
+			if(array_key_exists($task->task_parent, $tasks)){
+				$tasks[$task->task_parent]->tasks[$task->id] = $task;
+			}else{
+				$tasks[$task->id] = $task;
 			}
 		}
 		return $tasks;
@@ -121,17 +121,16 @@ class Tasks{
 	}
 	public function GetAllTaskUsers($taskId)
 	{
-		$sql = "SELECT * FROM assignments WHERE task = " . $taskId . " ORDER BY id";
-		$result = mysqli_query($this->conn, $sql);
-		$userIds = array();
-		if (mysqli_num_rows($result) > 0)
-		{
-			while($userId = mysqli_fetch_object($result))
-			{
-					$userIds[$userId->id] = $userId;			
-			}
+		$sql = "SELECT * FROM assignments WHERE task = :taskId ORDER BY id";
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":taskId", $taskId);
+		$stmt->execute();
+		$results = $stmt->fetchAll(PDO::FETCH_CLASS, 'Task');
+		$assignments = array();
+		foreach ($results as $assignment) {
+			$assignments[$assignment->id] = $assignment;			
 		}
-		return $userIds;
+		return $assignments;
 	}
 }
 
