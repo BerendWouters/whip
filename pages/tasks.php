@@ -21,12 +21,9 @@ if(isset($_GET['task']))
 	<div class="row">
 		<div class="col-md-8">
 			<ul class="nav nav-tabs" role="tablist">
-				<li class="active"><a href="#overzicht" data-toggle="tab">Overzicht</a>
-				</li>
-				<li class=""><a href="#berichten" data-toggle="tab">Berichten <span class="badge">todo</span></a>
-				</li>
-				<li class=""><a href="#team" data-toggle="tab">Team<span class="badge">todo</span></a>
-				</li>
+				<li class="active"><a href="#overzicht" data-toggle="tab">Overzicht</a></li>
+				<li class=""><a href="#berichten" data-toggle="tab">Berichten <span class="badge">todo</span></a></li>
+				<li class=""><a href="#team" data-toggle="tab">Team<span class="badge">todo</span></a></li>
 			</ul>
 			<div class="tab-content">
 				<div class="tab-pane fade active in" id="overzicht">
@@ -61,18 +58,19 @@ if(isset($_GET['task']))
 						<?php echo($percent_verschil) . "%";?>
 					 </div>
 				</div>
-				<div class="tab-pane fade" id="berichten">
-					<h4>Berichten komen hier:</h4>	
-					<?php
-						
-					?>
-				</div>				
-				<div class="tab-pane fade" id="team">
-					<h4>Team:</h4>	
-					<?php
-						
-					?>
-				</div>
+			</div>
+			<div class="tab-pane fade" id="berichten">
+				<h4>Berichten komen hier:</h4>	
+				<?php
+					
+				?>
+			</div>				
+			<div class="tab-pane fade" id="team">
+				<h4>Team:</h4>	
+				<?php
+					var_dump($tasks->GetAllTaskUsers($task->id));
+					
+				?>
 			</div>
 		</div>
 	</div>

@@ -1,13 +1,11 @@
 <?php
-require_once("classes/Database.class.php");
-require_once("classes/Users.class.php");
+require_once("classes/Database.php");
+
 class Tasks{
 	private $conn = null;
-	private $users = null;
 
-	public function __construct(){
+	function __construct(){
 		$database = new Database();
-		$this->users = new Users();
 		$this->conn = $database->GetDatabase();
 	}
 
@@ -19,7 +17,6 @@ class Tasks{
 		{
 			while($task = mysqli_fetch_object($result))
 			{
-				$task->user = $this->users->GetUser($task->owner);
 				if(array_key_exists($task->task_parent, $tasks)){
 					$tasks[$task->task_parent]->tasks[$task->id] = $task;
 				}else{
@@ -38,24 +35,37 @@ class Tasks{
 		if (mysqli_num_rows($result) > 0)
 		{
 			$task = mysqli_fetch_object($result);
-			$task->user = $this->users->GetUser($task->owner);
+			 
+			//zoek owner info
+			$sql = "SELECT * FROM users WHERE userid = '" . $task->owner . "'";
+			$result = mysqli_query($this->conn, $sql);
+			$user = mysqli_fetch_object($result);
+			$task->user = $user;
+			//zoek taken onder project
+			//$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "'";
+			//$result = mysqli_query($this->conn, $sql);
+			//$taskids = array();
+			//if (mysqli_num_rows($result) > 0)
+			//{
+			//	while($row = mysqli_fetch_assoc($result))
+			//	{			
+			//		array_push($taskids, $row['id']);
+			//	}
+			//}
+			//$alletaken = count($taskids);
+			//$currenttimestamp = strtotime(date('Y-m-d'));
 			return $task;
 		}
 	}
 	
-	public function GetAllTasksFromProject($projectId, $completionStatus = null){
-		$append = "";
-		if($completionStatus != NULL){
-			$append = " AND completed = ".$completionStatus ." ";
-		}
-		$sql = "SELECT * FROM tasks WHERE parent = " . $projectId ." ". $append . "ORDER BY id";
+	public function GetAllTasksFromProject($projectId){
+		$sql = "SELECT * FROM tasks WHERE parent = " . $projectId . " ORDER BY id";
 		$result = mysqli_query($this->conn, $sql);
 		$tasks = array();
 		if (mysqli_num_rows($result) > 0)
 		{
 			while($task = mysqli_fetch_object($result))
 			{
-				$task->user = $this->users->GetUser($task->owner);
 				if(array_key_exists($task->task_parent, $tasks)){
 					$tasks[$task->task_parent]->tasks[$task->id] = $task;
 				}else{
@@ -83,20 +93,21 @@ class Tasks{
 			if(!empty($task->tasks))
 				$this->renderTasks($task->tasks);
 		}
+	}
+	
 	public function GetAllTaskUsers($taskId)
+	{
+		$sql = "SELECT * FROM assignments WHERE task = " . $taskId . " ORDER BY id";
+		$result = mysqli_query($this->conn, $sql);
+		$userIds = array();
+		if (mysqli_num_rows($result) > 0)
 		{
-			$sql = "SELECT * FROM assignments WHERE task = " . $taskId . " ORDER BY id";
-			$result = mysqli_query($this->conn, $sql);
-			$userIds = array();
-			if (mysqli_num_rows($result) > 0)
+			while($userId = mysqli_fetch_object($result))
 			{
-				while($userId = mysqli_fetch_object($result))
-				{
-						$userIds[$userId->id] = $userId;			
-				}
+					$userIds[$userId->id] = $userId;			
 			}
-			return $userIds;
 		}
+		return $userIds;
 	}
 	
 
