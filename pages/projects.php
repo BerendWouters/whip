@@ -1,50 +1,19 @@
 <?php
-
+$projects = new Project();
 if(isset($_GET['project']))
 {
 	//zoek project in db
-	$sql = "SELECT * FROM projects WHERE id = '" . mysql_escape_string($_GET['project']) . "'";
-	$result = mysqli_query($SQL_conn, $sql);
-	$row = mysqli_fetch_assoc($result);
-	if (mysqli_num_rows($result) > 0)
-	{
-		$projectid = $row['id'];
-		$projectnaam = $row['naam'];
-		$leadid = $row['lead'];
-		$omschrijving = $row['omschrijving'];
-		$startdatum = $row['startdatum'];
-		$deadline = $row['deadline'];
-		$completed = $row['completed'];
-		//zoek lead info
-		$sql = "SELECT * FROM users WHERE userid = '" . $leadid . "'";
-		$result = mysqli_query($SQL_conn, $sql);
-		$row = mysqli_fetch_assoc($result);
-		$leadname = $row['user_name'];
-		$leadusername = $row['user_username'];
-		$leadmail = $row['user_mail'];
-		//zoek taken onder project
-		$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "' AND task_parent = 0";
-		$result = mysqli_query($SQL_conn, $sql);
-		$taskids = array();
-		if (mysqli_num_rows($result) > 0)
-		{
-			while($row = mysqli_fetch_assoc($result))
-			{			
-				array_push($taskids, $row['id']);
-			}
-		}
-		$alletaken = count($taskids);
-		$currenttimestamp = strtotime(date('Y-m-d'));
-		
-	}else{
-		echo "		<div id=\"page-inner\">\n";
-		echo "			<div class=\"row\">\n";
-		echo "				<div class=\"col-md-12\">\n";
-		echo "					<h2>Project niet gevonden!</h2>\n";
-		echo "		</div>\n";
-		echo "	</div>\n";
-		echo "</div>\n";
-	}
+	$project = $projects->getProject($_GET['project']);
+	$currenttimestamp = strtotime(date('Y-m-d'));
+	// }else{
+	// 	echo "		<div id=\"page-inner\">\n";
+	// 	echo "			<div class=\"row\">\n";
+	// 	echo "				<div class=\"col-md-12\">\n";
+	// 	echo "					<h2>Project niet gevonden!</h2>\n";
+	// 	echo "		</div>\n";
+	// 	echo "	</div>\n";
+	// 	echo "</div>\n";
+	// }
 }else{
 	die("no project?");
 }
@@ -52,7 +21,7 @@ if(isset($_GET['project']))
 <div id="page-inner">
     <div class="row">
 		<div class="col-md-12">
-			<h2><?php echo($projectnaam); ?></h2>
+			<h2><?php echo($project->naam); ?></h2>
 		</div>
 	</div>
 	<!-- /. ROW  -->
@@ -62,7 +31,7 @@ if(isset($_GET['project']))
 			<ul class="nav nav-tabs" role="tablist">
 				<li class="active"><a href="#overzicht" data-toggle="tab">Overzicht</a>
 				</li>
-				<li class=""><a href="#taken" data-toggle="tab">Taken <span class="badge"><?php echo($alletaken);?></span></a>
+				<li class=""><a href="#taken" data-toggle="tab">Taken <span class="badge"><?php echo($project->taskCount);?></span></a>
 				</li>
 				<li class=""><a href="#berichten" data-toggle="tab">Berichten <span class="badge">todo</span></a>
 				</li>	
@@ -72,21 +41,21 @@ if(isset($_GET['project']))
 			<div class="tab-content">
 				<div class="tab-pane fade active in" id="overzicht">
 					<h4>Omschrijving project:</h4>			
-					<?php echo($omschrijving); ?><hr>
+					<?php echo($project->omschrijving); ?><hr>
 					<h4>Status:</h4>
 					<?php
 						//tel open en gesloten taken
-						$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "' AND completed = 0 AND task_parent = 0";
+						$sql = "SELECT * FROM tasks WHERE parent = '" . $project->id . "' AND completed = 0 AND task_parent = 0";
 						$result = mysqli_query($SQL_conn, $sql);
 						$opentaken = mysqli_num_rows($result);
-						$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "' AND completed = 1  AND task_parent = 0";
+						$sql = "SELECT * FROM tasks WHERE parent = '" . $project->id . "' AND completed = 1  AND task_parent = 0";
 						$result = mysqli_query($SQL_conn, $sql);
 						$geslotentaken = mysqli_num_rows($result);		
-						echo $geslotentaken . " melding(en) gesloten van de " . $alletaken . ".";
-						$percentueel_gesloten = round((($geslotentaken / $alletaken)*100),0);
+						echo $geslotentaken . " melding(en) gesloten van de " . $project->taskCount . ".";
+						$percentueel_gesloten = round((($geslotentaken / $project->taskCount)*100),0);
 					?>						
 					<div class="progress">
-					  <div class="progress-bar" role="progressbar" aria-valuenow="<?php echo($geslotentaken); ?>" aria-valuemin="0" aria-valuemax="<?php echo($alletaken);?>" style="width: <?php echo($percentueel_gesloten);?>%;">
+					  <div class="progress-bar" role="progressbar" aria-valuenow="<?php echo($geslotentaken); ?>" aria-valuemin="0" aria-valuemax="<?php echo($project->taskCount);?>" style="width: <?php echo($percentueel_gesloten);?>%;">
 							<?php echo($percentueel_gesloten) . "%";?>
 					  </div>
 					</div>	
@@ -98,7 +67,7 @@ if(isset($_GET['project']))
 						$takenopenoverdeadline = 0;
 						$takengeslotenbinnendeadline = 0;
 						$takengeslotenoverdeadline = 0;						
-						$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "'  AND task_parent = 0";
+						$sql = "SELECT * FROM tasks WHERE parent = '" . $project->id . "'  AND task_parent = 0";
 						$result = mysqli_query($SQL_conn, $sql);
 						$taskids = array();
 						if (mysqli_num_rows($result) > 0)
@@ -129,10 +98,10 @@ if(isset($_GET['project']))
 								}
 							}
 						}
-						$percent_opengoed = round((($takenopenbinnendeadline / $alletaken)*100),0);
-						$percent_openslecht = round((($takenopenoverdeadline / $alletaken)*100),0);
-						$percent_geslotengoed = round((($takengeslotenbinnendeadline / $alletaken)*100),0);
-						$percent_geslotenslecht = round((($takengeslotenoverdeadline / $alletaken)*100),0);
+						$percent_opengoed = round((($takenopenbinnendeadline / $project->taskCount)*100),0);
+						$percent_openslecht = round((($takenopenoverdeadline / $project->taskCount)*100),0);
+						$percent_geslotengoed = round((($takengeslotenbinnendeadline / $project->taskCount)*100),0);
+						$percent_geslotenslecht = round((($takengeslotenoverdeadline / $project->taskCount)*100),0);
 						
 						echo "<div>";
 						echo "<span class=\"label label-success\">Gesloten binnen deadline:" . $takengeslotenbinnendeadline . " (" . $percent_geslotengoed . "%)</span>&nbsp;";						
