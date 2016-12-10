@@ -83,6 +83,20 @@ class Tasks{
 			if(!empty($task->tasks))
 				$this->renderTasks($task->tasks);
 		}
+	public function GetAllTaskUsers($taskId)
+		{
+			$sql = "SELECT * FROM assignments WHERE task = " . $taskId . " ORDER BY id";
+			$result = mysqli_query($this->conn, $sql);
+			$userIds = array();
+			if (mysqli_num_rows($result) > 0)
+			{
+				while($userId = mysqli_fetch_object($result))
+				{
+						$userIds[$userId->id] = $userId;			
+				}
+			}
+			return $userIds;
+		}
 	}
 	
 

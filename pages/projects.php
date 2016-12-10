@@ -1,5 +1,6 @@
 <?php
-$projects = new Project();
+$projects = new Projects();
+$tasks = new Tasks();
 if(isset($_GET['project']))
 {
 	//zoek project in db
@@ -158,44 +159,23 @@ if(isset($_GET['project']))
 						<tbody>
 							<?php
 							$teller = 1;
-							$sql = "SELECT * FROM tasks WHERE completed = 0  AND task_parent = 0 AND parent = " . $projectid;
-							$result = mysqli_query($SQL_conn, $sql);	
-							if (mysqli_num_rows($result) > 0)
-							{
-								while($row = mysqli_fetch_assoc($result))
-								{							
-									$id = $row['id'];
-									$deadline = $row['deadline'];
-									$omschrijving = $row['smalltext'];
-									$startdatum = $row['startdatum'];
-									$owner = $row['owner'];
-									$projectnr = $row['parent'];
-									$sql1 = "SELECT * FROM users WHERE userid = '" . $owner . "'";
-									$result1 = mysqli_query($SQL_conn, $sql1);
-									$row1 = mysqli_fetch_assoc($result1);
-									if (mysqli_num_rows($result1) > 0)
+							$taskList = $tasks->GetAllTasksFromProject($project->id, 0);
+							foreach ($taskList as $task) {
+								$deadline = $task->deadline;
+								if($currenttimestamp < $deadline)
 									{
-										$leadnaam = $row1['user_name'];
-										$leadusername = $row1['username'];
+										echo "<tr onclick=\"window.document.location='?task=" . $task->id . "';\" class=\"success\">\n";
 									}else{
-										$leadnaam = "Geen";
-										$leadusername = "";
-									}
-									$timestamp = strtotime(date('Y-m-d'));
-									if($timestamp < $deadline)
-									{
-										echo "<tr onclick=\"window.document.location='?task=" . $id . "';\" class=\"success\">\n";
-									}else{
-										echo "<tr onclick=\"window.document.location='?task=" . $id . "';\" class=\"danger\">\n";
+										echo "<tr onclick=\"window.document.location='?task=" . $task->id . "';\" class=\"danger\">\n";
 									}
 									echo "	<td>" . $teller . "</td>\n";
 									$teller++;
-									echo "	<td>" . $leadusername . "(" . $leadnaam . ")</td>\n";
+									echo "	<td>" . $task->user->username . " (" . $task->user->user_name . ")</td>\n";
 									echo "	<td>" . date('Y-m-d', $deadline) . "</td>\n";
-									echo "	<td>" . $omschrijving . "</td>\n";	
+									echo "	<td>" . $task->smalltext . "</td>\n";	
 									
 								
-									$percent_verschil = round((($timestamp - $startdatum) / ($deadline - $startdatum) *100),0);
+									$percent_verschil = round((($currenttimestamp - $task->startdatum) / ($deadline - $task->startdatum) *100),0);
 									echo "	<td>\n";
 									echo "		<div class=\"progress\">\n";
 									echo "			<div class=\"";
@@ -219,8 +199,8 @@ if(isset($_GET['project']))
 									echo "				" . $percent_verschil . "%\n";
 									echo "			</div>\n";
 									echo "		</div>\n";
-									$dagen_verschil = round((abs($timestamp - $deadline)/60/60/24),1);
-									if($timestamp > $deadline)
+									$dagen_verschil = round((abs($currenttimestamp - $deadline)/60/60/24),1);
+									if($currenttimestamp > $deadline)
 									{
 										echo "<span class=\"label label-danger\">" . $dagen_verschil . " dag(en) over deadline.</span>";											
 									}else{
@@ -228,7 +208,6 @@ if(isset($_GET['project']))
 									}
 									echo "	</td>\n";												
 									echo "</tr>\n";
-								}
 							}
 							?>
 						</tbody>
@@ -248,44 +227,21 @@ if(isset($_GET['project']))
 						<tbody>
 							<?php
 							$teller = 1;
-							$sql = "SELECT * FROM tasks WHERE completed = 1  AND task_parent = 0 AND parent = " . $projectid;
-							$result = mysqli_query($SQL_conn, $sql);	
-							if (mysqli_num_rows($result) > 0)
-							{
-								while($row = mysqli_fetch_assoc($result))
-								{							
-									$id = $row['id'];
-									$deadline = $row['deadline'];
-									$omschrijving = $row['smalltext'];
-									$startdatum = $row['startdatum'];
-									$einddatum = $row['sluitingsdatum'];
-									$owner = $row['owner'];
-									$projectnr = $row['parent'];
-									$sql1 = "SELECT * FROM users WHERE userid = '" . $owner . "'";
-									$result1 = mysqli_query($SQL_conn, $sql1);
-									$row1 = mysqli_fetch_assoc($result1);
-									if (mysqli_num_rows($result1) > 0)
-									{
-										$leadnaam = $row1['user_name'];
-										$leadusername = $row1['username'];
-									}else{
-										$leadnaam = "Geen";
-										$leadusername = "";
-									}
-									if($einddatum <= $deadline)
-									{
-										echo "<tr onclick=\"window.document.location='?task=" . $id . "';\" class=\"success\">\n";
-									}else{
-										echo "<tr onclick=\"window.document.location='?task=" . $id . "';\" class=\"danger\">\n";
-									}
-									echo "	<td>" . $teller . "</td>\n";
-									$teller++;
-									echo "	<td>" . $leadusername . "(" . $leadnaam . ")</td>\n";
-									echo "	<td>" . date('Y-m-d', $deadline) . "</td>\n";
-									echo "	<td>" . date('Y-m-d', $einddatum) . "</td>\n";
-									echo "	<td>" . $omschrijving . "</td>\n";			
-									echo "</tr>\n";
+							$taskList = $tasks->GetAllTasksFromProject($project->id, 1);
+							foreach ($taskList as $task) {
+								if($task->sluitingsdatum <= $task->deadline)
+								{
+									echo "<tr onclick=\"window.document.location='?task=" . $task->id . "';\" class=\"success\">\n";
+								}else{
+									echo "<tr onclick=\"window.document.location='?task=" . $task->id . "';\" class=\"danger\">\n";
 								}
+								echo "	<td>" . $teller . "</td>\n";
+								$teller++;
+								echo "	<td>" . $task->user->username . " (" . $task->user->user_name . ")</td>\n";
+								echo "	<td>" . date('Y-m-d', $task->deadline) . "<sluitingsdatum/td>\n";
+								echo "	<td>" . date('Y-m-d', $task->sluitingsdatum) . "</td>\n";
+								echo "	<td>" . $task->smalltext . "</td>\n";			
+								echo "</tr>\n";								
 							}
 							?>
 						</tbody>
