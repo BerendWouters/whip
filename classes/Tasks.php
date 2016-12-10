@@ -28,6 +28,37 @@ class Tasks{
 		return $tasks;
 	}
 
+	public function GetTask($taskId)
+	{
+		$sql = "SELECT * FROM tasks WHERE id = '" . mysqli_escape_string($_GET['task']) . "'";
+		$result = mysqli_query($this->conn, $sql);
+		if (mysqli_num_rows($result) == 0)
+		{
+
+			$task = mysqli_fetch_object($result);
+			 
+			//zoek owner info
+			$sql = "SELECT * FROM users WHERE userid = '" . $task->owner . "'";
+			$result = mysqli_query($this->conn, $sql);
+			$user = mysqli_fetch_object($result);
+			$task->user = $user;
+			//zoek taken onder project
+			$sql = "SELECT * FROM tasks WHERE parent = '" . $projectid . "'";
+			$result = mysqli_query($this->conn, $sql);
+			$taskids = array();
+			if (mysqli_num_rows($result) > 0)
+			{
+				while($row = mysqli_fetch_assoc($result))
+				{			
+					array_push($taskids, $row['id']);
+				}
+			}
+			$alletaken = count($taskids);
+			$currenttimestamp = strtotime(date('Y-m-d'));
+			
+		}
+	}
+
 	public function renderTasks($taskList){
 		$currenttimestamp = strtotime(date('Y-m-d'));
 		foreach ($taskList as $task) {
@@ -44,13 +75,6 @@ class Tasks{
 			if(!empty($task->tasks))
 				$this->renderTasks($task->tasks);
 		}
-	}
-
-
-	public function GetSubTasks($userId, $parentId){
-		$sql = "SELECT * FROM tasks WHERE completed = 0  AND task_parent = " . $parentId . " AND owner = " . $userId;
-		$result = mysqli_query($this->conn, $sql);	
-		return $result;
 	}
 }
 
