@@ -2,8 +2,8 @@
 session_start();
 require("db_connect.php");
 require("mail.php");
-require_once("classes/Tasks.php");
-require_once("classes/Projects.php");
+require_once("classes/Tasks.class.php");
+require_once("classes/Projects.class.php");
 
 $tasks = new Tasks();
 if (!isset($_SESSION['whip_username']))

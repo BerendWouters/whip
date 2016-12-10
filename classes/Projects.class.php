@@ -1,11 +1,12 @@
 <?php
-require_once("classes/Database.php");
 
-class Project{
-	private $conn = null;
+class Projects{
+	private $conn = null;	
+	private $users = null;
 
 	function __construct(){
 		$database = new Database();
+		$this->users = new Users();
 		$this->conn = $database->GetDatabase();
 	}
 
@@ -16,12 +17,7 @@ class Project{
 		{
 
 			$project = mysqli_fetch_object($result);
-			
-			//zoek lead info
-			$sql = "SELECT * FROM users WHERE userid = " . $project->lead;
-			$result = mysqli_query($this->conn, $sql);
-			$user = mysqli_fetch_object($result);
-			$project->user = $user;
+			$project->user = $this->users->GetUser($project->lead);
 			//zoek taken onder project
 			$sql = "SELECT COUNT(id) as taskCount FROM tasks WHERE parent = '" . $project->id . "' AND task_parent = 0";
 			$result = mysqli_query($this->conn, $sql);
