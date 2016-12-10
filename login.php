@@ -1,7 +1,8 @@
 <?php
-//--------------------------------------------
-// login.php
-//--------------------------------------------
+session_start();
+require_once("classes/Database.class.php");
+require_once("classes/Users.class.php");
+$users = new Users();
 ?>
 <html>
 	<head>
@@ -112,35 +113,11 @@
 		
 	<body>
 	<?php
-		session_start();
-		require("db_connect.php");
 		require("mail.php");
 		if(isset($_GET['token']) && !isset($_POST['username']))
 		{
-			$token = mysql_escape_string($_GET['token']);
-			$sql = "SELECT * FROM mailtokens WHERE token = '" . $token . "'";
-			$result = mysqli_query($SQL_conn, $sql);
-			$row = mysqli_fetch_assoc($result);
-			if (mysqli_num_rows($result) == 0)
-			{			
-				die("<center><p class=\"message\"><img src=\"images/exclamation-circle.png\" width=16 height=16>&nbsp;&nbsp;Token bestaat niet!</p></center>");
-			}else{
-				$userid = $row['userid'];
-				$tokenid = $row['tokenid'];
-				
-				//update db
-				$sql = "UPDATE users SET verified = 1 WHERE userid = " . $userid . "";
-				$result = mysqli_query($SQL_conn, $sql);
-				$row = mysqli_fetch_assoc($result);
-				
-				//delete mailtoken
-				$sql = "DELETE FROM mailtokens WHERE tokenid = " . $tokenid . "";
-				$result = mysqli_query($SQL_conn, $sql);
-				$row = mysqli_fetch_assoc($result);				
-				
-				//user is now registered!
-				echo("<center><p class=\"message\"><img src=\"images/success.png\" width=16 height=16>&nbsp;&nbsp;Registratie voltooid! Gelieve in te loggen:</p></center>");
-			}
+			$response = $users->verify($_GET['token']);
+			echo $response;
 			
 		}
 	?>
@@ -240,32 +217,9 @@
 				die("<center><p class=\"message\"><img src=\"images/success.png\" width=16 height=16>&nbsp;&nbsp;Registratie in behandeling, controleer je e-mail om te bevestigen!</p></center>");
 			}
 		}
-		if(isset($_POST['username']))
+		if(isset($_POST['username']) && isset($_POST['password']))
 		{		
-			//variabelen:
-			$username = mysql_escape_string($_POST['username']);
-			$password = mysql_escape_string($_POST['password']);
-			
-			$sql = "SELECT * FROM users WHERE username = '" . $username . "'";
-			$result = mysqli_query($SQL_conn, $sql);
-			$row = mysqli_fetch_assoc($result);
-			if (mysqli_num_rows($result) > 0)
-			{
-				$salt = $row['salt'];
-				$userid = $row['userid'];
-				if(md5(md5($password) . md5($salt)) == $row['userpass'])
-				{
-					//user is ingelogd.
-					$_SESSION['whip_username'] = $username;
-					$_SESSION['whip_username'] = $username;
-					$_SESSION['whip_username'] = $username;
-					$_SESSION['whip_userid'] = $userid;
-					$_SESSION['whip_userid'] = $userid;
-					$_SESSION['whip_userid'] = $userid;
-					echo("<center><p class=\"message\"><img src=\"images/success.png\" width=16 height=16>&nbsp;&nbsp;Gegevens kloppen.</p></center>");
-					die('<META HTTP-EQUIV=REFRESH CONTENT="1; index.php">');
-				}
-			}
+			$users->login($_POST['username'], $_POST['password']);			
 		}
 	?>	
 	</body>	

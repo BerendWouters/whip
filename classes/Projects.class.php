@@ -10,6 +10,21 @@ class Projects{
 		$this->conn = $database->GetDatabase();
 	}
 
+	public function GetProjects($status){
+		$sql = "SELECT * FROM projects WHERE completed = ".$status;
+		$result = mysqli_query($this->conn, $sql);
+		$projects = array();
+		if (mysqli_num_rows($result) > 0)
+		{
+			while($project = mysqli_fetch_object($result)){
+				$project->user = $this->users->GetUser($project->lead);
+				$projects[$project->id] = $project;
+			}
+		}
+		return $projects;
+	}
+
+
 	public function GetProject($id){
 		$sql = "SELECT * FROM projects WHERE id = ".  $id;
 		$result = mysqli_query($this->conn, $sql);
@@ -29,10 +44,12 @@ class Projects{
 			}else{
 				$project->taskCount = 0;
 			}
-			return $project;
 		}else{
-			echo "No project with id ". $id. " found";
+			$project = new stdClass;
+			$project->taskCount = 0;
+			$project->naam = "Geen project";
 		}
+		return $project;
 	}
 }
 ?>

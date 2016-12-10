@@ -1,6 +1,5 @@
 <?php
 session_start();
-require("db_connect.php");
 require("mail.php");
 require_once("classes/Tasks.class.php");
 require_once("classes/Projects.class.php");
