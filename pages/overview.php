@@ -1,3 +1,9 @@
+<?php
+$timestamp = strtotime(date('Y-m-d'));
+$projects = new Projects();
+$tasks = new Tasks();
+$users = new Users();
+?>
 <div id="page-inner">
     <div class="row">
 		<div class="col-md-12">
@@ -36,75 +42,52 @@
 						<tbody>
 							<?php
 							$teller = 1;
-							$sql = "SELECT * FROM projects WHERE completed = 0";
-							$result = mysqli_query($SQL_conn, $sql);	
-							if (mysqli_num_rows($result) > 0)
-							{
-								while($row = mysqli_fetch_assoc($result))
-								{							
-									$id = $row['id'];
-									$naam = $row['naam'];
-									$leadid = $row['lead'];
-									$omschrijving = $row['omschrijving'];
-									$deadline = $row['deadline'];
-									$startdatum = $row['startdatum'];
-									$sql1 = "SELECT * FROM users WHERE userid = '" . $leadid . "'";
-									$result1 = mysqli_query($SQL_conn, $sql1);
-									$row1 = mysqli_fetch_assoc($result1);
-									if (mysqli_num_rows($result1) > 0)
-									{
-										$leadnaam = $row1['user_name'];
-										$leadusername = $row1['username'];
-									}else{
-										$leadnaam = "Geen";
-										$leadusername = "";
-									}
-									$timestamp = strtotime(date('Y-m-d'));
-									if($timestamp < $deadline)
-									{
-										echo "<tr onclick=\"window.document.location='?project=" . $id . "';\" class=\"success\">\n";
-									}else{
-										echo "<tr onclick=\"window.document.location='?project=" . $id . "';\" class=\"danger\">\n";
-									}
-									echo "	<td>" . $teller . "</td>\n";
-									$teller++;
-									echo "	<td>" . $naam . "</td>\n";
-									echo "	<td>" . $leadusername . "(" . $leadnaam . ")</td>\n";
-									echo "	<td>" . date('Y-m-d', $deadline) . "</td>\n";
-									$percent_verschil = round((($timestamp - $startdatum) / ($deadline - $startdatum) *100),0);
-									echo "	<td>\n";
-									echo "		<div class=\"progress\">\n";
-									echo "			<div class=\"";
-									if($percent_verschil <= 25)
-									{
-										echo "progress-bar progress-bar-success";
-									}
-									if($percent_verschil > 25 && $percent_verschil <= 75)
-									{
-										echo "progress-bar progress-bar-info";
-									}
-									if($percent_verschil > 75 && $percent_verschil <= 100)
-									{
-										echo "progress-bar progress-bar-warning";
-									}
-									if($percent_verschil > 100)
-									{
-										echo "progress-bar progress-bar-danger";
-									}											
-									echo "\" role=\"progressbar\" aria-valuenow=\"" . $percent_verschil . "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: " . $percent_verschil . "%\">\n";
-									echo "				" . $percent_verschil . "%\n";
-									echo "			</div>\n";
-									echo "		</div>\n";
-									$dagen_verschil = round((abs($timestamp - $deadline)/60/60/24),1);
-									if($timestamp > $deadline)
-									{
-										echo "<span class=\"label label-danger\">" . $dagen_verschil . " dag(en) over deadline.</span>";											
-									}else{
-										echo "<span class=\"label label-info\">" . $dagen_verschil . " dag(en) tot deadline.</span>";											
-									}
-									echo "	</td>\n";									
-									echo "</tr>\n";
+							$projectList = $projects->GetProjects(0);
+							foreach ($projectList as $project) {
+								if($timestamp < $project->deadline)
+								{
+									echo "<tr onclick=\"window.document.location='?project=" . $project->id . "';\" class=\"success\">\n";
+								}else{
+									echo "<tr onclick=\"window.document.location='?project=" . $project->id . "';\" class=\"danger\">\n";
 								}
+								echo "	<td>" . $teller . "</td>\n";
+								$teller++;
+								echo "	<td>" . $project->naam . "</td>\n";
+								echo "	<td>" . $project->user->user_name . " (" . $project->user->username . ")</td>\n";
+								echo "	<td>" . date('Y-m-d', $project->deadline) . "</td>\n";
+								$percent_verschil = round((($timestamp - $project->startdatum) / ($project->deadline - $project->startdatum) *100),0);
+								echo "	<td>\n";
+								echo "		<div class=\"progress\">\n";
+								echo "			<div class=\"";
+								if($percent_verschil <= 25)
+								{
+									echo "progress-bar progress-bar-success";
+								}
+								if($percent_verschil > 25 && $percent_verschil <= 75)
+								{
+									echo "progress-bar progress-bar-info";
+								}
+								if($percent_verschil > 75 && $percent_verschil <= 100)
+								{
+									echo "progress-bar progress-bar-warning";
+								}
+								if($percent_verschil > 100)
+								{
+									echo "progress-bar progress-bar-danger";
+								}											
+								echo "\" role=\"progressbar\" aria-valuenow=\"" . $percent_verschil . "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: " . $percent_verschil . "%\">\n";
+								echo "				" . $percent_verschil . "%\n";
+								echo "			</div>\n";
+								echo "		</div>\n";
+								$dagen_verschil = round((abs($timestamp - $project->deadline)/60/60/24),1);
+								if($timestamp > $project->deadline)
+								{
+									echo "<span class=\"label label-danger\">" . $dagen_verschil . " dag(en) over deadline.</span>";											
+								}else{
+									echo "<span class=\"label label-info\">" . $dagen_verschil . " dag(en) tot deadline.</span>";											
+								}
+								echo "	</td>\n";									
+								echo "</tr>\n";
 							}
 							?>
 						</tbody>
@@ -135,86 +118,56 @@
 								<tbody>
 									<?php
 									$teller = 1;
-									$sql = "SELECT * FROM tasks WHERE completed = 0  AND task_parent = 0 AND owner = " . $_SESSION['whip_userid'] . "";
-									$result = mysqli_query($SQL_conn, $sql);	
-									if (mysqli_num_rows($result) > 0)
-									{
-										while($row = mysqli_fetch_assoc($result))
-										{							
-											$id = $row['id'];
-											$deadline = $row['deadline'];
-											$omschrijving = $row['smalltext'];
-											$startdatum = $row['startdatum'];
-											$owner = $row['owner'];
-											$projectnr = $row['parent'];
-											$sql1 = "SELECT * FROM users WHERE userid = '" . $owner . "'";
-											$result1 = mysqli_query($SQL_conn, $sql1);
-											$row1 = mysqli_fetch_assoc($result1);
-											if (mysqli_num_rows($result1) > 0)
-											{
-												$leadnaam = $row1['user_name'];
-												$leadusername = $row1['username'];
-											}else{
-												$leadnaam = "Geen";
-												$leadusername = "";
-											}
-											$timestamp = strtotime(date('Y-m-d'));
-											if($timestamp < $deadline)
-											{
-												echo "<tr onclick=\"window.document.location='?task=" . $id . "';\" class=\"success\">\n";
-											}else{
-												echo "<tr onclick=\"window.document.location='?task=" . $id . "';\" class=\"danger\">\n";
-											}
-											echo "	<td>" . $teller . "</td>\n";
-											$teller++;
-											echo "	<td>" . $leadusername . "(" . $leadnaam . ")</td>\n";
-											echo "	<td>" . date('Y-m-d', $deadline) . "</td>\n";
-											echo "	<td>" . $omschrijving . "</td>\n";	
-											
-											$sql2 = "SELECT * FROM projects WHERE id = '" . $projectnr . "'";
-											$result2 = mysqli_query($SQL_conn, $sql2);
-											$row2 = mysqli_fetch_assoc($result2);
-											$projectnaam = $row2['naam'];
-											if($projectnaam == "")
-											{
-												$projectnaam = "Geen";
-											}
-											echo "<td>" . $projectnaam . "</td>\n";
-											
-											$percent_verschil = round((($timestamp - $startdatum) / ($deadline - $startdatum) *100),0);
-											echo "	<td>\n";
-											echo "		<div class=\"progress\">\n";
-											echo "			<div class=\"";
-											if($percent_verschil <= 25)
-											{
-												echo "progress-bar progress-bar-success";
-											}
-											if($percent_verschil > 25 && $percent_verschil <= 75)
-											{
-												echo "progress-bar progress-bar-info";
-											}
-											if($percent_verschil > 75 && $percent_verschil <= 100)
-											{
-												echo "progress-bar progress-bar-warning";
-											}
-											if($percent_verschil > 100)
-											{
-												echo "progress-bar progress-bar-danger";
-											}											
-											echo "\" role=\"progressbar\" aria-valuenow=\"" . $percent_verschil . "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: " . $percent_verschil . "%\">\n";
-											echo "				" . $percent_verschil . "%\n";
-											echo "			</div>\n";
-											echo "		</div>\n";
-											$dagen_verschil = round((abs($timestamp - $deadline)/60/60/24),1);
-											if($timestamp > $deadline)
-											{
-												echo "<span class=\"label label-danger\">" . $dagen_verschil . " dag(en) over deadline.</span>";											
-											}else{
-												echo "<span class=\"label label-info\">" . $dagen_verschil . " dag(en) tot deadline.</span>";											
-											}
-											echo "	</td>\n";												
-											echo "</tr>\n";
+									$taskList = $tasks->GetAllMyParentTasks($_SESSION['whip_userid']);
+									foreach ($taskList as $task) {
+										if($timestamp < $task->deadline)
+										{
+											echo "<tr onclick=\"window.document.location='?task=" . $task->id . "';\" class=\"success\">\n";
+										}else{
+											echo "<tr onclick=\"window.document.location='?task=" . $task->id . "';\" class=\"danger\">\n";
 										}
+										echo "	<td>" . $teller . "</td>\n";
+										$teller++;
+										echo "	<td>" . $task->user->user_name . "(" . $task->user->username . ")</td>\n";
+										echo "	<td>" . date('Y-m-d', $task->deadline) . "</td>\n";
+										echo "	<td>" . $task->smalltext . "</td>\n";	
+										
+										
+										echo "<td>" . $task->project->naam . "</td>\n";
+										
+										$percent_verschil = round((($timestamp - $task->startdatum) / ($task->deadline - $task->startdatum) *100),0);
+										echo "	<td>\n";
+										echo "		<div class=\"progress\">\n";
+										echo "			<div class=\"";
+										if($percent_verschil <= 25)
+										{
+											echo "progress-bar progress-bar-success";
+										}
+										if($percent_verschil > 25 && $percent_verschil <= 75)
+										{
+											echo "progress-bar progress-bar-info";
+										}
+										if($percent_verschil > 75 && $percent_verschil <= 100)
+										{
+											echo "progress-bar progress-bar-warning";
+										}
+										if($percent_verschil > 100)
+										{
+											echo "progress-bar progress-bar-danger";
+										}											
+										echo "\" role=\"progressbar\" aria-valuenow=\"" . $percent_verschil . "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: " . $percent_verschil . "%\">\n";
+										echo "				" . $percent_verschil . "%\n";
+										echo "			</div>\n";
+										echo "		</div>\n";
+										$dagen_verschil = round((abs($timestamp - $task->deadline)/60/60/24),1);
+										if($timestamp > $task->deadline)
+										{
+											echo "<span class=\"label label-danger\">" . $dagen_verschil . " dag(en) over deadline.</span>";											
+										}else{
+											echo "<span class=\"label label-info\">" . $dagen_verschil . " dag(en) tot deadline.</span>";											
+										}
+										echo "	</td>\n";												
+										echo "</tr>\n";
 									}
 									?>
 								</tbody>
@@ -236,86 +189,56 @@
 								<tbody>
 									<?php
 									$teller = 1;
-									$sql = "SELECT * FROM tasks WHERE completed = 0  AND task_parent = 0";
-									$result = mysqli_query($SQL_conn, $sql);	
-									if (mysqli_num_rows($result) > 0)
-									{
-										while($row = mysqli_fetch_assoc($result))
-										{							
-											$id = $row['id'];
-											$deadline = $row['deadline'];
-											$omschrijving = $row['smalltext'];
-											$startdatum = $row['startdatum'];
-											$owner = $row['owner'];
-											$projectnr = $row['parent'];
-											$sql1 = "SELECT * FROM users WHERE userid = '" . $owner . "'";
-											$result1 = mysqli_query($SQL_conn, $sql1);
-											$row1 = mysqli_fetch_assoc($result1);
-											if (mysqli_num_rows($result1) > 0)
-											{
-												$leadnaam = $row1['user_name'];
-												$leadusername = $row1['username'];
-											}else{
-												$leadnaam = "Geen";
-												$leadusername = "";
-											}
-											$timestamp = strtotime(date('Y-m-d'));
-											if($timestamp < $deadline)
-											{
-												echo "<tr onclick=\"window.document.location='?task=" . $id . "';\" class=\"success\">\n";
-											}else{
-												echo "<tr onclick=\"window.document.location='?task=" . $id . "';\" class=\"danger\">\n";
-											}
-											echo "	<td>" . $teller . "</td>\n";
-											$teller++;
-											echo "	<td>" . $leadusername . "(" . $leadnaam . ")</td>\n";
-											echo "	<td>" . date('Y-m-d', $deadline) . "</td>\n";
-											echo "	<td>" . $omschrijving . "</td>\n";	
-											
-											$sql2 = "SELECT * FROM projects WHERE id = '" . $projectnr . "'";
-											$result2 = mysqli_query($SQL_conn, $sql2);
-											$row2 = mysqli_fetch_assoc($result2);
-											$projectnaam = $row2['naam'];
-											if($projectnaam == "")
-											{
-												$projectnaam = "Geen";
-											}
-											echo "<td>" . $projectnaam . "</td>\n";
-											
-											$percent_verschil = round((($timestamp - $startdatum) / ($deadline - $startdatum) *100),0);
-											echo "	<td>\n";
-											echo "		<div class=\"progress\">\n";
-											echo "			<div class=\"";
-											if($percent_verschil <= 25)
-											{
-												echo "progress-bar progress-bar-success";
-											}
-											if($percent_verschil > 25 && $percent_verschil <= 75)
-											{
-												echo "progress-bar progress-bar-info";
-											}
-											if($percent_verschil > 75 && $percent_verschil <= 100)
-											{
-												echo "progress-bar progress-bar-warning";
-											}
-											if($percent_verschil > 100)
-											{
-												echo "progress-bar progress-bar-danger";
-											}											
-											echo "\" role=\"progressbar\" aria-valuenow=\"" . $percent_verschil . "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: " . $percent_verschil . "%\">\n";
-											echo "				" . $percent_verschil . "%\n";
-											echo "			</div>\n";
-											echo "		</div>\n";
-											$dagen_verschil = round((abs($timestamp - $deadline)/60/60/24),1);
-											if($timestamp > $deadline)
-											{
-												echo "<span class=\"label label-danger\">" . $dagen_verschil . " dag(en) over deadline.</span>";											
-											}else{
-												echo "<span class=\"label label-info\">" . $dagen_verschil . " dag(en) tot deadline.</span>";											
-											}
-											echo "	</td>\n";												
-											echo "</tr>\n";
+									$taskList = $tasks->GetAllTasks();
+									foreach ($taskList as $task) {
+										if($timestamp < $task->deadline)
+										{
+											echo "<tr onclick=\"window.document.location='?task=" . $task->id . "';\" class=\"success\">\n";
+										}else{
+											echo "<tr onclick=\"window.document.location='?task=" . $task->id . "';\" class=\"danger\">\n";
 										}
+										echo "	<td>" . $teller . "</td>\n";
+										$teller++;
+										echo "	<td>" . $task->user->user_name . "(" . $task->user->username . ")</td>\n";
+										echo "	<td>" . date('Y-m-d', $task->deadline) . "</td>\n";
+										echo "	<td>" . $task->smalltext . "</td>\n";	
+										
+										
+										echo "<td>" . $task->project->naam . "</td>\n";
+										
+										$percent_verschil = round((($timestamp - $task->startdatum) / ($task->deadline - $task->startdatum) *100),0);
+										echo "	<td>\n";
+										echo "		<div class=\"progress\">\n";
+										echo "			<div class=\"";
+										if($percent_verschil <= 25)
+										{
+											echo "progress-bar progress-bar-success";
+										}
+										if($percent_verschil > 25 && $percent_verschil <= 75)
+										{
+											echo "progress-bar progress-bar-info";
+										}
+										if($percent_verschil > 75 && $percent_verschil <= 100)
+										{
+											echo "progress-bar progress-bar-warning";
+										}
+										if($percent_verschil > 100)
+										{
+											echo "progress-bar progress-bar-danger";
+										}											
+										echo "\" role=\"progressbar\" aria-valuenow=\"" . $percent_verschil . "\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: " . $percent_verschil . "%\">\n";
+										echo "				" . $percent_verschil . "%\n";
+										echo "			</div>\n";
+										echo "		</div>\n";
+										$dagen_verschil = round((abs($timestamp - $task->deadline)/60/60/24),1);
+										if($timestamp > $task->deadline)
+										{
+											echo "<span class=\"label label-danger\">" . $dagen_verschil . " dag(en) over deadline.</span>";											
+										}else{
+											echo "<span class=\"label label-info\">" . $dagen_verschil . " dag(en) tot deadline.</span>";											
+										}
+										echo "	</td>\n";												
+										echo "</tr>\n";
 									}
 									?>
 								</tbody>
@@ -351,19 +274,14 @@
 						<tbody>
 							<?php
 							$teller = 1;
-							$sql = "SELECT * FROM users WHERE verified = 1";
-							$result = mysqli_query($SQL_conn, $sql);	
-							if (mysqli_num_rows($result) > 0)
-							{
-								while($row = mysqli_fetch_assoc($result))
-								{							
-									echo "<tr>\n";								
-									echo "	<td>" . $row['user_name'] . "</td>\n";
-									echo "	<td>" . $row['username'] . "</td>\n";
-									echo "	<td>" . $row['usermail'] . "</td>\n";											
-									echo "</tr>\n";
-								}
-							}
+							$userList = $users->GetAllVerifiedUsers();							
+							foreach ($userList as $user) {
+								echo "<tr>\n";								
+								echo "	<td>" . $user->user_name . "</td>\n";
+								echo "	<td>" . $user->username . "</td>\n";
+								echo "	<td>" . $user->usermail . "</td>\n";											
+								echo "</tr>\n";
+							}									
 							?>
 						</tbody>
 						</table>
