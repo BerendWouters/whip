@@ -69,7 +69,6 @@ if (!isset($_SESSION['whip_username']))
                         </ul>
                     </li>
                 </ul>
-
             </div>
 
         </nav>
@@ -83,10 +82,12 @@ if (!isset($_SESSION['whip_username']))
 				}elseif(isset($_GET['task']))
 				{
 					include("pages/tasks.php");
+				}elseif(isset($_GET['user']))
+				{
+					include("pages/users.php");
 				}else{
 					include("pages/overview.php");
 				}
-				
 			?>
         </div>
      <!-- /. WRAPPER  -->
