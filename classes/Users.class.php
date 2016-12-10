@@ -1,15 +1,4 @@
 <?php
-class User{
-	public $userid;
-	public $username;
-	public $user_name;
-	public $usermail;
-}
-
-class UserLogin extends User{
-	public $userpass;
-	public $salt;
-}
 
 class Users{
 
@@ -78,7 +67,7 @@ class Users{
 		$sql = "SELECT * FROM users WHERE username = :username";
 		$stmt = $this->conn->prepare($sql);
 		$stmt->bindParam(":username", $username);
-		$stmt->setFetchMode(PDO::FETCH_CLASS, "User");
+		$stmt->setFetchMode(PDO::FETCH_CLASS, "UserLogin");
 		$stmt->execute();
 		$user = $stmt->fetch();
 		if ($user != null)
