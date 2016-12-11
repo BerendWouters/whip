@@ -3,12 +3,12 @@ require_once("classes/Database.class.php");
 require_once("classes/Users.class.php");
 require_once("classes/Projects.class.php");
 
-
 class Tasks{
 	private $conn = null;
 	private $users = null;
 
-	public function __construct(){
+	public function __construct()
+	{
 		$database = new Database();
 		$this->users = new Users();
 		$this->projects = new Projects();
@@ -16,7 +16,6 @@ class Tasks{
 	}
 
 	public function GetAllTasks(){
-		$sql = 
 		$stmt = $this->conn->prepare("SELECT * FROM tasks WHERE completed = 0 AND task_parent = 0");
 		$stmt->execute();
 
@@ -45,6 +44,35 @@ class Tasks{
 			}else{
 				$tasks[$task->id] = $task;
 			}
+		}
+		return $tasks;
+	}
+	public function GetAllParentTasksForProjectWithStatus($projectId, $status){
+		$sql = "SELECT * FROM tasks WHERE parent = :projectId AND completed = :status AND task_parent = 0";
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":projectId", $projectId);
+		$stmt->bindParam(":status", $status);
+		$stmt->execute();
+		$results = $stmt->fetchAll(PDO::FETCH_CLASS, 'Task');
+		$tasks = array();
+		foreach ($results as $task) {
+			$task->project = $this->projects->GetProject($task->parent);
+			$task->user = $this->users->GetUser($task->owner);
+			$tasks[$task->id] = $task;
+		}
+		return $tasks;
+	}
+	public function GetAllParentTasksForProject($projectId){
+		$sql = "SELECT * FROM tasks WHERE parent = :projectId AND task_parent = 0";
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":projectId", $projectId);
+		$stmt->execute();
+		$results = $stmt->fetchAll(PDO::FETCH_CLASS, 'Task');
+		$tasks = array();
+		foreach ($results as $task) {
+			$task->project = $this->projects->GetProject($task->parent);
+			$task->user = $this->users->GetUser($task->owner);
+			$tasks[$task->id] = $task;
 		}
 		return $tasks;
 	}
@@ -79,7 +107,8 @@ class Tasks{
 		}
 	}
 	
-	public function GetAllTasksFromProject($projectId, $completionStatus = null){
+	public function GetAllTasksFromProject($projectId, $completionStatus = null)
+	{
 		$append = "";
 		if($completionStatus != NULL){
 			$append = " AND completed = :completionStatus";
@@ -102,7 +131,8 @@ class Tasks{
 		return $tasks;
 	}	
 
-	public function renderTasks($taskList){
+	public function renderTasks($taskList)
+	{
 		$currenttimestamp = strtotime(date('Y-m-d'));
 		foreach ($taskList as $task) {
 			if($currenttimestamp > $task->deadline)
@@ -119,6 +149,7 @@ class Tasks{
 				$this->renderTasks($task->tasks);
 		}
 	}
+	
 	public function GetAllTaskUsers($taskId)
 	{
 		$sql = "SELECT * FROM assignments WHERE task = :taskId ORDER BY id";
@@ -132,6 +163,52 @@ class Tasks{
 		}
 		return $assignments;
 	}
+
+	public function GetAllTasksFromParent($parentId)
+	{
+		$sql = "SELECT * FROM tasks WHERE task_parent = :parentId ORDER BY id";
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":parentId", $parentId);
+		$stmt->execute();
+		$results = $stmt->fetchAll(PDO::FETCH_CLASS, 'Task');
+		$tasks = array();
+		foreach ($results as $task) {
+			$task->user = $this->users->GetUser($task->owner);
+			$tasks[$task->id] = $task;
+		}
+		return $tasks;
+	}
+	public function GetAllTasksFromUser($userId)
+	{
+		$sql = "SELECT * FROM tasks WHERE owner = :userId ORDER BY id";
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":userId", $userId);
+		$stmt->execute();
+		$results = $stmt->fetchAll(PDO::FETCH_CLASS, 'Task');
+		$tasks = array();
+		foreach ($results as $task) {
+			$task->user = $this->users->GetUser($task->owner);
+			$tasks[$task->id] = $task;
+		}
+		return $tasks;
+	}	
+
+	public function GetAllTasksWhereUserIsAssigned($userId)
+	{
+		$sql = "SELECT * FROM assignments WHERE user = :userId ORDER BY id";
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":userId", $userId);
+		$stmt->execute();
+		$results = $stmt->fetchAll(PDO::FETCH_CLASS, 'Task');
+		$tasks = array();
+		foreach ($results as $task) {
+			$task->user = $this->users->GetUser($task->user);
+			$tasks[$task->id] = $this->GetTask($task->task);
+		
+		}
+		return $tasks;
+	}		
 }
+	
 
 ?>

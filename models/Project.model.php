@@ -8,5 +8,6 @@ class Project{
 	public $sluitingsdatum;
 	public $deadline;
 	public $completed;
+	
 	public $user;
 }

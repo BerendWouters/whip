@@ -63,6 +63,19 @@ class Users{
 		}
 	}
 
+	public function GetMVP($projectId){
+		$sql = "SELECT owner, COUNT(id) AS aantal FROM tasks WHERE task_parent = 0 AND parent = :projectId GROUP BY owner ORDER BY aantal DESC LIMIT 0,1";
+		$stmt = $this->conn->prepare($sql);
+		$stmt->bindParam(":projectId", $projectId);
+		$stmt->execute();
+		$result = $stmt->fetch();
+		$user = $this->GetUser($result['owner']);
+		return $user;
+	}
+
+	
+
+
 	public function login($username, $password){
 		$sql = "SELECT * FROM users WHERE username = :username";
 		$stmt = $this->conn->prepare($sql);
