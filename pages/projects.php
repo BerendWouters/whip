@@ -1,6 +1,7 @@
 <?php
 $projects = new Projects();
 $tasks = new Tasks();
+$users = new Users();
 if(isset($_GET['project']))
 {
 	//zoek project in db
@@ -46,17 +47,13 @@ if(isset($_GET['project']))
 					<h4>Status:</h4>
 					<?php
 						//tel open en gesloten taken
-						$sql = "SELECT * FROM tasks WHERE parent = '" . $project->id . "' AND completed = 0 AND task_parent = 0";
-						$result = mysqli_query($SQL_conn, $sql);
-						$opentaken = mysqli_num_rows($result);
-						$sql = "SELECT * FROM tasks WHERE parent = '" . $project->id . "' AND completed = 1  AND task_parent = 0";
-						$result = mysqli_query($SQL_conn, $sql);
-						$geslotentaken = mysqli_num_rows($result);		
-						echo $geslotentaken . " melding(en) gesloten van de " . $project->taskCount . ".";
-						$percentueel_gesloten = round((($geslotentaken / $project->taskCount)*100),0);
+						$openTaskList = $tasks->GetAllParentTasksForProjectWithStatus($project->id, 0);						
+						$closedTaskList = $tasks->GetAllParentTasksForProjectWithStatus($project->id, 1);
+						echo count($closedTaskList) . " melding(en) gesloten van de " . $project->taskCount . ".";
+						$percentueel_gesloten = round(((count($closedTaskList) / $project->taskCount)*100),0);
 					?>						
 					<div class="progress">
-					  <div class="progress-bar" role="progressbar" aria-valuenow="<?php echo($geslotentaken); ?>" aria-valuemin="0" aria-valuemax="<?php echo($project->taskCount);?>" style="width: <?php echo($percentueel_gesloten);?>%;">
+					  <div class="progress-bar" role="progressbar" aria-valuenow="<?php echo(count($closedTaskList)); ?>" aria-valuemin="0" aria-valuemax="<?php echo($project->taskCount);?>" style="width: <?php echo($percentueel_gesloten);?>%;">
 							<?php echo($percentueel_gesloten) . "%";?>
 					  </div>
 					</div>	
@@ -68,17 +65,12 @@ if(isset($_GET['project']))
 						$takenopenoverdeadline = 0;
 						$takengeslotenbinnendeadline = 0;
 						$takengeslotenoverdeadline = 0;						
-						$sql = "SELECT * FROM tasks WHERE parent = '" . $project->id . "'  AND task_parent = 0";
-						$result = mysqli_query($SQL_conn, $sql);
-						$taskids = array();
-						if (mysqli_num_rows($result) > 0)
-						{
-							while($row = mysqli_fetch_assoc($result))
-							{	
-								if($row['completed'] == 0)
+						$allTaskList = $tasks->GetAllParentTasksForProject($project->id);
+						foreach ($allTaskList as $task) {
+							if($task->completed) // int being parsed to boolean in most languages
 								{
 									//taak is nog lopende
-									if($currenttimestamp <= $row['deadline'])
+									if($currenttimestamp <= $task->deadline)
 									{
 										//binnen deadline
 										$takenopenbinnendeadline ++;
@@ -88,7 +80,7 @@ if(isset($_GET['project']))
 									}
 								}else{
 									//taak is gesloten
-									if($row['sluitingsdatum'] <= $row['deadline'])
+									if($task->sluitingsdatum <= $task->deadline)
 									{
 										//binnen deadline
 										$takengeslotenbinnendeadline ++;
@@ -97,7 +89,6 @@ if(isset($_GET['project']))
 										$takengeslotenoverdeadline ++;
 									}										
 								}
-							}
 						}
 						$percent_opengoed = round((($takenopenbinnendeadline / $project->taskCount)*100),0);
 						$percent_openslecht = round((($takenopenoverdeadline / $project->taskCount)*100),0);
@@ -129,20 +120,11 @@ if(isset($_GET['project']))
 					<br>
 					<h4>Inzet:</h4>
 					<?php
+						$mvp = $users->GetMVP($project->id);
 						// zoek mvp
-						$sql = "SELECT owner, COUNT(id) AS aantal FROM tasks WHERE task_parent = 0 GROUP BY owner ORDER BY aantal DESC LIMIT 0,1";
-						$result = mysqli_query($SQL_conn, $sql);
-						$row = mysqli_fetch_assoc($result);
-						$mvpid = $row['owner'];
-						//resolve username
-						$sql = "SELECT * FROM users WHERE userid='" . $mvpid . "'";
-						$result = mysqli_query($SQL_conn, $sql);
-						$row = mysqli_fetch_assoc($result);					
-						$mvpnaam = $row['user_name'];
-						$mvpusername = $row['username'];
-						$mvpmail = $row['usermail'];
+						
 					?>
-					Teamlid met de meeste taken: <a href="?user=<?php echo($mvpid);?>"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;<?php echo($mvpnaam . "(" . $mvpusername . ")");?></a>
+					Teamlid met de meeste taken: <a href="?user=<?= $mvp->userid; ?>"><i class="fa fa-user" aria-hidden="true"></i>&nbsp;<?php echo($mvp->user_name . "(" . $mvp->username . ")");?></a>
 				</div>
 				<div class="tab-pane fade" id="taken">
 					<h4>Overzicht open taken</h4>
