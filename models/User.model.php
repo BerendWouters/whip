@@ -6,7 +6,11 @@ class User{
 	public $usermail;
 }
 
-class UserLogin extends User{
+class UserLogin{
+	public $userid;
+	public $username;
+	public $user_name;
+	public $usermail;
 	public $userpass;
 	public $salt;
 }
