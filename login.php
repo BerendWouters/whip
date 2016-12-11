@@ -2,6 +2,7 @@
 session_start();
 require_once("classes/Database.class.php");
 require_once("classes/Users.class.php");
+require_once("models/User.php");
 $users = new Users();
 ?>
 <html>
